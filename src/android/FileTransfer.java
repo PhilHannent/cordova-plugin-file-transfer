@@ -1,4 +1,6 @@
 /*
+       edited by MM 4/29/15 --- 
+       
        Licensed to the Apache Software Foundation (ASF) under one
        or more contributor license agreements.  See the NOTICE file
        distributed with this work for additional information
@@ -64,7 +66,7 @@ import org.json.JSONObject;
 import android.net.Uri;
 import android.os.Build;
 import android.util.Log;
-import android.webkit.CookieManager;
+import org.xwalk.core.internal.XWalkCookieManager;
 
 public class FileTransfer extends CordovaPlugin {
 
@@ -81,6 +83,12 @@ public class FileTransfer extends CordovaPlugin {
 
     private static HashMap<String, RequestContext> activeRequests = new HashMap<String, RequestContext>();
     private static final int MAX_BUFFER_SIZE = 16 * 1024;
+
+    private XWalkCookieManager mCookieManager = null;
+
+    public FileTransfer() {
+        mCookieManager = new XWalkCookieManager();
+    }
 
     private static final class RequestContext {
         String source;
@@ -235,7 +243,7 @@ public class FileTransfer extends CordovaPlugin {
         }
 
         if (!gotCookie) {
-            cookie = CookieManager.getInstance().getCookie(target);
+            cookie = mCookieManager.getCookie(target);
         }
 
         return cookie;
@@ -344,7 +352,7 @@ public class FileTransfer extends CordovaPlugin {
                     conn.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + BOUNDARY);
 
                     // Set the cookies on the response
-                    String cookie = getCookies(target);
+                     String cookie = mCookieManager.getCookie(target);
 
                     if (cookie != null) {
                         conn.setRequestProperty("Cookie", cookie);
@@ -713,7 +721,7 @@ public class FileTransfer extends CordovaPlugin {
         final boolean isLocalTransfer = !useHttps && uriType != CordovaResourceApi.URI_TYPE_HTTP;
         if (uriType == CordovaResourceApi.URI_TYPE_UNKNOWN) {
             JSONObject error = createFileTransferError(INVALID_URL_ERR, source, target, null, 0, null);
-            Log.e(LOG_TAG, "Unsupported URI: " + sourceUri);
+            Log.e(LOG_TAG, "Unsupported URI: " + targetUri);
             callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.IO_EXCEPTION, error));
             return;
         }
@@ -810,7 +818,7 @@ public class FileTransfer extends CordovaPlugin {
                         connection.setRequestMethod("GET");
         
                         // TODO: Make OkHttp use this CookieManager by default.
-                        String cookie = getCookies(sourceUri.toString());
+                        String cookie = mCookieManager.getCookie(sourceUri.toString());
 
                         if(cookie != null)
                         {
